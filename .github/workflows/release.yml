@@ -1,0 +1,42 @@
+name: Binary build
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+      - name: Install ruby-packer
+        run: |
+          sudo apt-get install squashfs-tools build-essential make -y
+          curl https://i.jpillora.com/ericbeland/ruby-packer! | bash
+          mv /usr/local/bin/ruby-packer /usr/local/bin/rubyc
+      - name: Build Jekyll Standalone Binary
+        run: |
+          rubyc --quiet -o jekyll exe/jekyll
+          echo "compress binary with tar"
+          tar -czvf linux-x64.tar.gz jekyll
+          echo "rename and move binary for checking"
+          mv jekyll ../a
+          cd .. && chmod +x a
+          echo "compile binary done"
+          echo "---------------------------"
+          echo "check directory list outside git"
+          ls -a
+          echo "check execute outside git directory"
+          ./a --version
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: linux-x64.tar.gz
+          prerelease: false
